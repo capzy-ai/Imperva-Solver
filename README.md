@@ -1,0 +1,179 @@
+<div align="center">
+
+<img src="https://capzy.ai/capzy-logo.svg" alt="Capzy" width="220" />
+
+# Imperva Incapsula Solver
+
+**Bypass Imperva Incapsula. Returns reese84 + incap_ses cookies.**
+
+[![Solve cost](https://img.shields.io/badge/from-%240.001%20%2F%20solve-%23ff5d2a)](https://capzy.ai/pricing)
+[![Speed](https://img.shields.io/badge/avg%20solve-~10%20seconds-%2322c55e)](https://capzy.ai/products/imperva)
+[![Uptime](https://img.shields.io/badge/uptime-99.9%25-%2322c55e)](https://capzy.ai/status)
+[![License: MIT](https://img.shields.io/badge/license-MIT-%23ff5d2a)](LICENSE)
+
+[Live Demo](https://capzy.ai/products/imperva/demo) ·
+[Get Free $0.10 Credit](https://capzy.ai/auth/register) ·
+[Dashboard](https://capzy.ai/dashboard) ·
+[Full Docs](https://capzy.ai/docs) ·
+[Pricing](https://capzy.ai/pricing)
+
+</div>
+
+---
+
+## What this repo is
+
+Copy-pasteable examples for solving **Imperva Incapsula** through the
+[Capzy](https://capzy.ai) HTTP API — no SDK required. Pure curl, Python,
+and Node.js using the raw API. Easy to read, easy to port, easy to audit.
+
+## What is Imperva Incapsula?
+
+Imperva Incapsula is a CDN/WAF that protects ~27,000 sites including banks, insurance companies, and enterprise portals. Uses JS challenges (reese84 + utmvc) to fingerprint browsers and set authentication cookies. Capzy returns the full clearance cookie set + the matching User-Agent.
+
+## Why Capzy
+
+- **From $0.001 per solve.** Flat pricing — no tiers, no retainer, no monthly minimum.
+- **~10 seconds average solve.** Production-grade speed.
+- **Drop-in compatible.** `createTask` / `getTaskResult` protocol. If your code already speaks the standard solver shape, swap the host to `https://api.capzy.ai`.
+- **$0.10 in real credits on sign-up.** No card. 100 free test solves.
+
+## Pricing
+
+| Task type | When to use | Cost / solve |
+|-----------|-------------|-------------:|
+| `AntiImpervaTaskProxyLess`             | Proxyless (Capzy supplies the IP) | **$0.001**   |
+| `AntiImpervaTask`                       | You supply the proxy              | **$0.001**   |
+
+For consistency across the target site, use the proxy variant with the
+**same proxy your session is already running through** — the solver
+mints the token from that IP, so when you submit it back through the
+same proxy everything looks consistent.
+
+## 60-second quickstart
+
+```bash
+# 1. Sign up — gets you $0.10 in free credits (100 solves)
+open https://capzy.ai/auth/register
+
+# 2. Copy your API key from the dashboard
+#    https://capzy.ai/dashboard/api-keys
+
+# 3. Run any example
+export CAPZY_KEY="capzy_..."
+bash examples/curl/basic.sh
+```
+
+Minimal Python:
+
+```python
+import requests, time
+
+KEY = "capzy_xxxxxxxxxxxxxxxxxxxxxxxx"
+
+# 1) Create the task
+created = requests.post("https://api.capzy.ai/createTask", json={
+    "clientKey": KEY,
+    "task": {
+        "type": "AntiImpervaTaskProxyLess",
+        "websiteURL": "https://example.com/protected"
+    },
+}).json()
+task_id = created["taskId"]
+
+# 2) Poll until ready
+while True:
+    result = requests.post("https://api.capzy.ai/getTaskResult", json={
+        "clientKey": KEY, "taskId": task_id,
+    }).json()
+    if result["status"] == "ready":
+        break
+    time.sleep(2)
+
+print(result["solution"])
+```
+
+That's the whole protocol. The rest of this repo is just that, in every
+language we could think of.
+
+## Pick your language
+
+| Language        | Example                                       |
+|-----------------|-----------------------------------------------|
+| **curl / bash** | [`examples/curl/basic.sh`](examples/curl/basic.sh)    |
+| **Python**      | [`examples/python/basic.py`](examples/python/basic.py) |
+| **Node.js**     | [`examples/nodejs/basic.js`](examples/nodejs/basic.js) |
+
+See [`examples/README.md`](examples/README.md) for setup details.
+
+## Request envelope
+
+```json
+{
+  "clientKey": "capzy_xxxxxxxxxxxxxxxxxxxxxxxx",
+  "task": {
+    "type": "AntiImpervaTaskProxyLess",
+    "websiteURL": "https://example.com/protected"
+  }
+}
+```
+
+| Field | Type | Required | Notes |
+|-------|------|:--------:|-------|
+| `type` | `string` | yes | AntiImpervaTaskProxyLess or AntiImpervaTask |
+| `websiteURL` | `string` | yes | Full URL of the Imperva-protected page |
+| `proxyType` | `string` | no  | http | https | socks4 | socks5 (only for `AntiImpervaTask`) |
+| `proxyAddress` | `string` | no  | IP or hostname of your proxy (only for `AntiImpervaTask`) |
+| `proxyPort` | `integer` | no  | Port number of your proxy (only for `AntiImpervaTask`) |
+| `proxyLogin` | `string` | no  | Optional — omit if your proxy doesn't require auth (only for `AntiImpervaTask`) |
+| `proxyPassword` | `string` | no  | Optional — omit if your proxy doesn't require auth (only for `AntiImpervaTask`) |
+
+Full reference in [`docs/parameters.md`](docs/parameters.md).
+
+## Response shape
+
+When the task is ready (`status: "ready"`), `solution` contains:
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `cookies` | `array` | Cookie objects ({name, value, domain, path}) including reese84, visid_incap_*, incap_ses_*, ___utmvc |
+| `userAgent` | `string` | User-Agent used during solve — must match when reusing cookies |
+
+### How to use the result
+
+Set every returned cookie on your HTTP client and use the same User-Agent we return. Cookies are IP + UA bound — keep the session consistent.
+
+## Features
+
+- Returns reese84 + visid_incap_* + incap_ses_* + ___utmvc cookies
+- Supports reese84 and utmvc challenge variants
+- User-Agent + cookie pairing returned for direct session reuse
+
+## FAQ
+
+**Why does the cookie set look so large?** Imperva uses multiple cookies for session continuity. Setting only some of them works on simpler deployments; setting all of them is reliable everywhere.
+
+## What you'll need
+
+- A Capzy API key — [sign up](https://capzy.ai/auth/register) (free, $0.10 credit).
+- Network access to `https://api.capzy.ai`.
+
+## Other captcha types
+
+Capzy solves 25+ captcha types. Full catalog at
+[capzy.ai/pricing](https://capzy.ai/pricing). Each type has its own
+solver repo on [github.com/capzy-ai](https://github.com/capzy-ai).
+
+## License
+
+[MIT](LICENSE).
+
+---
+
+<div align="center">
+
+**[Sign up for free credits →](https://capzy.ai/auth/register)**
+
+Built by [Capzy](https://capzy.ai). Issues + PRs welcome.
+
+</div>
