@@ -139,6 +139,43 @@ When the task is ready (`status: "ready"`), `solution` contains:
 | `cookies` | `array` | Cookie objects ({name, value, domain, path}) including reese84, visid_incap_*, incap_ses_*, ___utmvc |
 | `userAgent` | `string` | User-Agent used during solve — must match when reusing cookies |
 
+### Example
+
+```json
+{
+  "status": "ready",
+  "solution": {
+    "cookies": [
+      {
+        "name": "reese84",
+        "value": "<long reese84 challenge cookie>",
+        "domain": ".target.example.com",
+        "path": "/"
+      },
+      {
+        "name": "visid_incap_<sid>",
+        "value": "<value>",
+        "domain": ".target.example.com",
+        "path": "/"
+      },
+      {
+        "name": "incap_ses_<sid>",
+        "value": "<value>",
+        "domain": ".target.example.com",
+        "path": "/"
+      },
+      {
+        "name": "___utmvc",
+        "value": "<utmvc cookie value>",
+        "domain": ".target.example.com",
+        "path": "/"
+      }
+    ],
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+  }
+}
+```
+
 ### How to use the result
 
 Set every returned cookie on your HTTP client and use the same User-Agent we return. Cookies are IP + UA bound — keep the session consistent.
