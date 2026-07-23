@@ -17,10 +17,14 @@ API_BASE="${API_BASE:-https://api.capzy.ai}"
 : "${CAPZY_KEY:?set CAPZY_KEY in your env (grab one at https://capzy.ai/auth/register)}"
 
 # Customize the task body to match the target site you're solving.
+# reese84 mode. Omit scriptUrl to auto-detect it from websiteURL.
+# For the older utmvc challenge, use version="utmvc" + the _Incapsula_Resource scriptUrl + cookies instead.
 TASK=$(cat <<'JSON'
 {
     "type": "AntiImpervaTaskProxyLess",
-    "websiteURL": "https://example.com/protected"
+    "websiteURL": "https://www.example.com/",
+    "version": "reese84",
+    "scriptUrl": "https://www.example.com/s-weakes-Sir-Day/1860025529848880788?s=xlD1csYd"
 }
 JSON
 )

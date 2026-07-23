@@ -26,3 +26,44 @@ Capzy HTTP API. Three languages, same two-step protocol:
 
 Each example is fully self-contained and ~50 lines. No SDK, no client
 library, no abstraction between you and the API.
+
+## Two challenges — how to work each one
+
+Imperva ships two JS challenges. Send the fields for the one your target uses;
+a proxy is optional for both.
+
+### reese84 (modern)
+
+Send `scriptUrl` (the long dashed script URL, ending in `?s=…`). We
+return `reese84`. **The token comes back in the POST response BODY, not
+a `Set-Cookie`** — you set the cookie client-side:
+
+```python
+sol = result["solution"]                         # from getTaskResult
+r = requests.post(
+    REESE_SCRIPT_URL,                            # the same URL you sent
+    data=sol["reese84"],                  # raw body — do not re-encode
+    headers={"Content-Type": "text/plain; charset=utf-8",
+             "User-Agent": sol["userAgent"]},
+)
+token = r.json()["token"]                         # reese84 token is in the body
+requests.get("https://www.target.example.com/",
+             cookies={"reese84": token},
+             headers={"User-Agent": sol["userAgent"]})
+```
+
+### utmvc (legacy)
+
+Send `version: "utmvc"`, the `_Incapsula_Resource` `scriptUrl`, and every
+`incap_ses_*` cookie from your first request. We return the `___utmvc` value —
+set it alongside those session cookies and re-request:
+
+```python
+sol = result["solution"]
+cookies = {**session_cookies, "___utmvc": sol["utmvc"]}   # incap_ses_*/visid_incap_* + ___utmvc
+requests.get("https://www.target.example.com/",
+             cookies=cookies,
+             headers={"User-Agent": sol["userAgent"]})
+```
+
+Reuse the returned `userAgent` on every follow-up request in both cases.

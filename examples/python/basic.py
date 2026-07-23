@@ -30,7 +30,15 @@ def solve() -> dict:
             "clientKey": CAPZY_KEY,
             "task": {
                 "type": "AntiImpervaTaskProxyLess",
-                "websiteURL": "https://example.com/protected"
+                "websiteURL": "https://www.example.com/",
+                "version": "reese84",
+                # reese84: pass the script URL (long dashed path, ?s=...).
+                # Omit scriptUrl and we auto-detect it from websiteURL.
+                "scriptUrl": "https://www.example.com/s-weakes-Sir-Day/1860025529848880788?s=xlD1csYd",
+                # For the older utmvc challenge instead, send:
+                #   "scriptUrl": "https://www.example.com/_Incapsula_Resource?SWJIYLWA=...",
+                #   "version": "utmvc",
+                #   "cookies": [{"name": "incap_ses_345_2269415", "value": "..."}],
             },
         },
         timeout=15,
@@ -68,4 +76,8 @@ if __name__ == "__main__":
     solution = solve()
     print("solution:", solution)
     # ─── How to use the result ────────────────────────────────────
-    # Set every returned cookie on your HTTP client and use the same User-Agent we return. Cookies are IP + UA bound — keep the session consistent.
+    # reese84: POST solution["reese84"] (raw body) to your
+    #   scriptUrl with solution["userAgent"] — the response sets your
+    #   reese84 cookie. Reuse that cookie + User-Agent afterwards.
+    # utmvc:   set ___utmvc=solution["utmvc"] as a cookie and re-request
+    #   the page with the same User-Agent.

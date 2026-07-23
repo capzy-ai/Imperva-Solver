@@ -4,7 +4,7 @@
 
 # Imperva Incapsula Solver
 
-**Bypass Imperva Incapsula. Returns reese84 + incap_ses cookies.**
+**Bypass Imperva Incapsula. Solves reese84 + utmvc from the challenge script — no full-site load, no proxy required.**
 
 [![Solve cost](https://img.shields.io/badge/from-%240.001%20%2F%20solve-%23ff5d2a)](https://capzy.ai/pricing)
 [![Speed](https://img.shields.io/badge/avg%20solve-~10%20seconds-%2322c55e)](https://capzy.ai/products/imperva)
@@ -29,7 +29,9 @@ and Node.js using the raw API. Easy to read, easy to port, easy to audit.
 
 ## What is Imperva Incapsula?
 
-Imperva Incapsula is a CDN/WAF that protects ~27,000 sites including banks, insurance companies, and enterprise portals. Uses JS challenges (reese84 + utmvc) to fingerprint browsers and set authentication cookies. Capzy returns the full clearance cookie set + the matching User-Agent.
+Imperva Incapsula is a CDN/WAF that protects ~27,000 sites including banks, insurance companies, and enterprise portals. It uses two JavaScript challenges: **reese84** (a fingerprint "interrogation" the browser POSTs to a long dashed script URL to receive a `reese84` cookie) and the older **utmvc** (an `_Incapsula_Resource` script that computes a `___utmvc` cookie from the `incap_ses_*` session cookies).
+
+Capzy solves each **from the challenge script alone** — we run the bundle in a minimal host page, so a half-rendered or gated page no longer blocks the solve. We return the `reese84` (which you POST to receive your cookie) or the computed `___utmvc` value. Because you perform the final submit, the result isn't bound to our IP — **no proxy required**.
 
 ## Why Capzy
 
@@ -76,7 +78,11 @@ created = requests.post("https://api.capzy.ai/createTask", json={
     "clientKey": KEY,
     "task": {
         "type": "AntiImpervaTaskProxyLess",
-        "websiteURL": "https://example.com/protected"
+        "websiteURL": "https://www.example.com/",
+        "version": "reese84",
+        # reese84: pass the script URL (long dashed path ending in ?s=...).
+        # Omit scriptUrl and we auto-detect it from websiteURL.
+        "scriptUrl": "https://www.example.com/s-weakes-Sir-Day/1860025529848880788?s=xlD1csYd"
     },
 }).json()
 task_id = created["taskId"]
@@ -108,25 +114,47 @@ See [`examples/README.md`](examples/README.md) for setup details.
 
 ## Request envelope
 
+reese84 (modern challenge):
+
 ```json
 {
   "clientKey": "capzy_xxxxxxxxxxxxxxxxxxxxxxxx",
   "task": {
     "type": "AntiImpervaTaskProxyLess",
-    "websiteURL": "https://example.com/protected"
+    "websiteURL": "https://www.example.com/",
+    "version": "reese84",
+    "scriptUrl": "https://www.example.com/s-weakes-Sir-Day/1860025529848880788?s=xlD1csYd"
+  }
+}
+```
+
+utmvc (legacy challenge):
+
+```json
+{
+  "clientKey": "capzy_xxxxxxxxxxxxxxxxxxxxxxxx",
+  "task": {
+    "type": "AntiImpervaTaskProxyLess",
+    "websiteURL": "https://www.example.com/",
+    "scriptUrl": "https://www.example.com/_Incapsula_Resource?SWJIYLWA=5074a744...",
+    "version": "utmvc",
+    "cookies": [
+      { "name": "incap_ses_345_2269415", "value": "Twa4M6ISK2uPanH/1a/JBGZ55mcAAAAA..." }
+    ]
   }
 }
 ```
 
 | Field | Type | Required | Notes |
 |-------|------|:--------:|-------|
-| `type` | `string` | yes | AntiImpervaTaskProxyLess or AntiImpervaTask |
+| `type` | `string` | yes | `AntiImpervaTaskProxyLess` or `AntiImpervaTask` |
 | `websiteURL` | `string` | yes | Full URL of the Imperva-protected page |
-| `proxyType` | `string` | no  | http | https | socks4 | socks5 (only for `AntiImpervaTask`) |
-| `proxyAddress` | `string` | no  | IP or hostname of your proxy (only for `AntiImpervaTask`) |
-| `proxyPort` | `integer` | no  | Port number of your proxy (only for `AntiImpervaTask`) |
-| `proxyLogin` | `string` | no  | Optional — omit if your proxy doesn't require auth (only for `AntiImpervaTask`) |
-| `proxyPassword` | `string` | no  | Optional — omit if your proxy doesn't require auth (only for `AntiImpervaTask`) |
+| `version` | `string` | **yes** | `reese84` (modern challenge) or `utmvc` (older `_Incapsula_Resource` challenge) |
+| `scriptUrl` | `string` | recommended | The challenge script URL for **both** challenges — the reese84 dashed path or the utmvc `_Incapsula_Resource` script. Auto-detected if omitted |
+| `cookies` | `array` | utmvc | Every `incap_ses_*` cookie as `{name, value}` |
+| `script` | `string` | no | Pre-fetched reese84 JS; pass when the page injects inline config |
+| `userAgent` | `string` | no | Defaults to Windows Chrome (135–147); returned in the solution |
+| `proxyType/Address/Port/Login/Password` | — | no | Optional egress (either variant); also enables the cookie path |
 
 Full reference in [`docs/parameters.md`](docs/parameters.md).
 
@@ -136,59 +164,43 @@ When the task is ready (`status: "ready"`), `solution` contains:
 
 | Field | Type | Notes |
 |-------|------|-------|
-| `cookies` | `array` | Cookie objects ({name, value, domain, path}) including reese84, visid_incap_*, incap_ses_*, ___utmvc |
-| `userAgent` | `string` | User-Agent used during solve — must match when reusing cookies |
+| `reese84` | `string` | reese84 mode: the interrogation POST body — submit it to `scriptUrl` to get your `reese84` cookie |
+| `utmvc` | `string` | utmvc mode: the computed `___utmvc` cookie value |
+| `userAgent` | `string` | User-Agent used during solve — reuse it |
 
-### Example
+### Example (reese84)
 
 ```json
 {
   "status": "ready",
   "solution": {
-    "cookies": [
-      {
-        "name": "reese84",
-        "value": "<long reese84 challenge cookie>",
-        "domain": ".target.example.com",
-        "path": "/"
-      },
-      {
-        "name": "visid_incap_<sid>",
-        "value": "<value>",
-        "domain": ".target.example.com",
-        "path": "/"
-      },
-      {
-        "name": "incap_ses_<sid>",
-        "value": "<value>",
-        "domain": ".target.example.com",
-        "path": "/"
-      },
-      {
-        "name": "___utmvc",
-        "value": "<utmvc cookie value>",
-        "domain": ".target.example.com",
-        "path": "/"
-      }
-    ],
-    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+    "reese84": "{\"solution\":{\"interrogation\":{\"p\":\"9pp4bv7Sp0073gA1xoN9Aoo...E\",\"st\":1744612535,\"sr\":3851658681,\"cr\":937075512,\"og\":2},\"version\":\"beta\"},\"old_token\":null,\"error\":null,\"performance\":{\"interrogation\":488}}",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
   }
 }
 ```
 
 ### How to use the result
 
-Set every returned cookie on your HTTP client and use the same User-Agent we return. Cookies are IP + UA bound — keep the session consistent.
+- **reese84** — POST `reese84` (raw body) to your `scriptUrl`
+  with the returned `userAgent`; the response sets your `reese84` cookie.
+  Reuse that cookie + User-Agent on subsequent requests.
+- **utmvc** — set `___utmvc=<utmvc>` as a cookie and re-request with the same
+  User-Agent.
 
 ## Features
 
-- Returns reese84 + visid_incap_* + incap_ses_* + ___utmvc cookies
-- Supports reese84 and utmvc challenge variants
-- User-Agent + cookie pairing returned for direct session reuse
+- Solves from the challenge script alone — no full-site load required
+- reese84 → the interrogation payload you POST to `scriptUrl`
+- utmvc → the computed `___utmvc` value from your `incap_ses_*` cookies
+- Not IP-bound: works proxyless, or bring your own proxy
+- Auto-detects the reese84 script URL when you send only `websiteURL`
 
 ## FAQ
 
-**Why does the cookie set look so large?** Imperva uses multiple cookies for session continuity. Setting only some of them works on simpler deployments; setting all of them is reliable everywhere.
+**reese84 or utmvc?** reese84 is the modern challenge (long dashed script URL → `reese84` you POST back). utmvc is the older one (`_Incapsula_Resource` script + your `incap_ses_*` cookies → a `___utmvc` value you set as a cookie).
+
+**Do I need a proxy?** No — you perform the final POST / cookie-set from your own IP, so the ProxyLess variant works. Supply a proxy only to run the script through a specific egress or to use the full-browser cookie path.
 
 ## What you'll need
 
