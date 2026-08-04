@@ -58,24 +58,7 @@ This repo is the SDK-free path for everyone else.
 
 ## Captcha-specific questions
 
-**reese84 or utmvc — which do I use?** reese84 is the modern challenge:
-pass `scriptUrl` (the long dashed script URL) and POST the returned
-`reese84` to that URL to receive your `reese84` cookie. utmvc is the
-older challenge: set `version: "utmvc"`, pass the `_Incapsula_Resource`
-`scriptUrl` plus your `incap_ses_*` `cookies`, and set the returned
-`___utmvc` value as a cookie.
-
-**Do I need a proxy?** No. The payload/value we return isn't bound to our
-IP — you perform the final POST / cookie-set from your own IP, so the
-ProxyLess variant works. Supply a proxy only to run the script through a
-specific egress, or to use the full-browser cookie path (send only
-`websiteURL`).
-
-**What if the page doesn't fully load?** That's what the script path fixes:
-we run the reese84/utmvc bundle from a minimal host shell under your origin,
-so a half-rendered, region-redirected, or login-gated page no longer blocks
-the solve. Pass `scriptUrl` / `scriptUrl` explicitly when auto-detection
-can't see the challenge from our fetch.
+**Why does the cookie set look so large?** Imperva uses multiple cookies for session continuity. Setting only some of them works on simpler deployments; setting all of them is reliable everywhere.
 
 ## Operational
 

@@ -29,12 +29,7 @@ async function solve() {
     clientKey: CAPZY_KEY,
     task: {
       "type": "AntiImpervaTaskProxyLess",
-      "websiteURL": "https://www.example.com/",
-      "version": "reese84",
-      // reese84: pass the script URL (long dashed path, ?s=...).
-      // Omit scriptUrl and we auto-detect it from websiteURL.
-      "scriptUrl": "https://www.example.com/s-weakes-Sir-Day/1860025529848880788?s=xlD1csYd"
-      // For utmvc instead: scriptUrl + version:"utmvc" + cookies:[{name,value}]
+      "websiteURL": "https://example.com/protected"
     },
   });
   if (created.errorId) {
@@ -63,8 +58,5 @@ async function solve() {
   const solution = await solve();
   console.log("solution:", solution);
   // ─── How to use the result ──────────────────────────────────
-  // reese84: POST solution.reese84 (raw body) to your scriptUrl
-  //   with solution.userAgent — the response sets your reese84 cookie.
-  // utmvc:   set ___utmvc=solution.utmvc as a cookie and re-request the page
-  //   with the same User-Agent.
+  // Set every returned cookie on your HTTP client and use the same User-Agent we return. Cookies are IP + UA bound — keep the session consistent.
 })();
